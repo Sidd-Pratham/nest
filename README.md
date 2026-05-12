@@ -54,7 +54,7 @@ PORT=3000
 MONGO_URI=mongodb://localhost:27017/ems_db
 REDIS_HOST=localhost
 REDIS_PORT=6379
-JWT_SECRET=your_super_secret_jwt_key_change_in_production
+JWT_SECRET=key
 JWT_EXPIRES_IN=7d
 SEED_ADMIN_NAME=Super Admin
 SEED_ADMIN_EMAIL=superadmin@ems.com
@@ -151,12 +151,6 @@ GET /api/v1/attendance/report?employeeId=xxx&startDate=2025-01-01&endDate=2025-1
 
 ---
 
-## 🏢 Department Enum (Strict)
-
-`HR` | `IT` | `ENGINEERING` | `FINANCE` | `MARKETING` | `SALES` | `OPERATIONS` | `LEGAL` | `CUSTOMER_SUPPORT`
-
----
-
 ## 🗄️ Redis Caching Strategy
 
 - Admin and Employee data is cached on retrieval with a **5-minute TTL**.
@@ -167,11 +161,9 @@ GET /api/v1/attendance/report?employeeId=xxx&startDate=2025-01-01&endDate=2025-1
 
 ## 🔒 Security Features
 
-- Passwords are hashed with **bcrypt** (cost factor: 12).
+- Passwords are hashed with **bcrypt** 
 - Passwords must include uppercase, lowercase, digit, and special character.
 - JWT tokens expire in 7 days (configurable).
-- Employees **cannot change their email or department** via self-update.
-- Admins **cannot delete their own account**.
 - Soft-deletion preserves data integrity (records never physically deleted).
 
 ---
@@ -182,14 +174,3 @@ npm run test          # Unit tests
 npm run test:cov      # Coverage report
 npm run test:e2e      # End-to-end tests
 ```
-
----
-
-## 🎯 Design Decisions
-
-1. **Separate Admin & Employee entities** — Different schemas, separate login flows, and distinct JWT role claims (`userType: 'admin' | 'employee'`).
-2. **Unified JWT payload** — `role` field uses `UserRole` enum: `SUPER_ADMIN | ADMIN | EMPLOYEE`, simplifying guard logic.
-3. **Custom Redis service** — Wraps all Redis operations in try/catch, ensuring the app continues operating if Redis is down.
-4. **Soft deletion** — All deletes set `isDeleted: true` + `deletedAt` timestamp. Pre-query hooks auto-filter deleted records.
-5. **CSV streaming** — Reports are streamed directly via `fast-csv` piped to the HTTP response, avoiding memory accumulation for large datasets.
-6. **Pre-query Mongoose middleware** — Ensures `isDeleted: false` filter is applied on every `find*` query automatically.
